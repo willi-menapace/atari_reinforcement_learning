@@ -4,13 +4,13 @@ import gym.spaces as spaces
 import numpy as np
 import cv2
 
-class ResizeAndRecolorFrame(gym.ObservationWrapper):
+class PacmanResizeAndRecolorFrame(gym.ObservationWrapper):
     def __init__(self, env=None):
-        super(ResizeAndRecolorFrame, self).__init__(env)
+        super(PacmanResizeAndRecolorFrame, self).__init__(env)
         self.observation_space = spaces.Box(low=0, high=255, shape=(92, 84, 1), dtype=np.uint8)
 
     def observation(self, obs):
-        return ResizeAndRecolorFrame.process(obs)
+        return PacmanResizeAndRecolorFrame.process(obs)
 
     @staticmethod
     def get_channel_mask(image, center_values, offset=10):
@@ -22,22 +22,22 @@ class ResizeAndRecolorFrame(gym.ObservationWrapper):
 
     @staticmethod
     def get_uneatable_ghosts_mask(image):
-        mask = ResizeAndRecolorFrame.get_channel_mask(image, (200, 72, 72))
-        mask = mask | ResizeAndRecolorFrame.get_channel_mask(image, (84, 184, 153))
-        mask = mask | ResizeAndRecolorFrame.get_channel_mask(image, (180, 122, 48))
-        mask = mask | ResizeAndRecolorFrame.get_channel_mask(image, (198, 89, 179))
+        mask = PacmanResizeAndRecolorFrame.get_channel_mask(image, (200, 72, 72))
+        mask = mask | PacmanResizeAndRecolorFrame.get_channel_mask(image, (84, 184, 153))
+        mask = mask | PacmanResizeAndRecolorFrame.get_channel_mask(image, (180, 122, 48))
+        mask = mask | PacmanResizeAndRecolorFrame.get_channel_mask(image, (198, 89, 179))
 
         return mask
 
     @staticmethod
     def get_eatable_ghosts_mask(image):
-        mask = ResizeAndRecolorFrame.get_channel_mask(image, (66, 114, 194))
+        mask = PacmanResizeAndRecolorFrame.get_channel_mask(image, (66, 114, 194))
 
         return mask
 
     @staticmethod
     def get_pacman_mask(image):
-        mask = ResizeAndRecolorFrame.get_channel_mask(image, (210, 164, 74))
+        mask = PacmanResizeAndRecolorFrame.get_channel_mask(image, (210, 164, 74))
 
         return mask
 
@@ -62,7 +62,7 @@ class ResizeAndRecolorFrame(gym.ObservationWrapper):
         new_img = img[:, :, 0] * 0.299 + img[:, :, 1] * 0.587 + img[:, :, 2] * 0.114
 
         #Makes eatable ghosts black to distinguish them from uneatable ghosts in grayscale
-        eatable_ghost_mask = ResizeAndRecolorFrame.get_eatable_ghosts_mask(img)
+        eatable_ghost_mask = PacmanResizeAndRecolorFrame.get_eatable_ghosts_mask(img)
         new_img[eatable_ghost_mask] = 0
 
         resized_screen = cv2.resize(new_img, (84, 110), interpolation=cv2.INTER_AREA)
@@ -73,7 +73,43 @@ class ResizeAndRecolorFrame(gym.ObservationWrapper):
         x_t = np.reshape(x_t, [92, 84, 1])
         return x_t.astype(np.uint8)
 
-def wrap_pacman(env, stack_frames=4, episodic_life=True, reward_clipping=True):
+class PacmanRewardManager(gym.Wrapper):
+    def __init__(self, env=None):
+        super(PacmanRewardManager, self).__init__(env)
+
+
+    def step(self, action):
+        obs, reward, done, info = self.env.step(action)
+
+        #Eating dot
+        if reward == 10:
+            reward = 0.5
+        #Eating pill
+        elif reward == 50:
+            reward = 1
+        #Eating ghost
+        elif reward == 200:
+            reward = 2
+        #Eating fruit
+        elif reward == 100:
+            reward = 0.5
+        #Being eaten
+        elif done == True:
+            reward = -7
+        #Finishing level
+        elif reward > 200:
+            reward = 7
+        else:
+            reward = np.sign(reward)
+
+        return obs, reward, done, info
+
+    def reset(self):
+
+        obs = self.env.reset()
+        return obs
+
+def wrap_pacman(env, stack_frames=4, episodic_life=True):
     """Apply a common set of wrappers for Atari games."""
     assert 'NoFrameskip' in env.spec.id
     if episodic_life:
@@ -83,9 +119,8 @@ def wrap_pacman(env, stack_frames=4, episodic_life=True, reward_clipping=True):
     env = ptanwrap.MaxAndSkipEnv(env, skip=4)
     if 'FIRE' in env.unwrapped.get_action_meanings():
         env = ptanwrap.FireResetEnv(env)
-    env = ResizeAndRecolorFrame(env)
+    env = PacmanResizeAndRecolorFrame(env)
     env = ptanwrap.ImageToPyTorch(env)
     env = ptanwrap.FrameStack(env, stack_frames)
-    if reward_clipping:
-        env = ptanwrap.ClippedRewardsWrapper(env)
+    env = PacmanRewardManager(env)
     return env

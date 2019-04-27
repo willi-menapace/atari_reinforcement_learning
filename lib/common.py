@@ -30,10 +30,11 @@ HYPERPARAMS = {
         'run_name': 'pacman',
         'resume_from': None,
         'replay_size': 10 ** 6,
-        'replay_initial': 100000,
+        'replay_initial': 300000,
         'save_interval':    100000,
         'save_dir':         "pacman_saves/",
         'target_net_sync': 10000,
+        'qvalues_estimation_interval': 5000,
         'epsilon_frames': 10 ** 6,
         'epsilon_start': 1.0,
         'epsilon_final': 0.1,
@@ -76,6 +77,16 @@ def calc_loss_dqn(batch, net, tgt_net, gamma, device="cpu"):
     expected_state_action_values = next_state_values.detach() * gamma + rewards_v
     return nn.MSELoss()(state_action_values, expected_state_action_values)
 
+def calc_avg_qval(batch, net, device="cpu"):
+    states, actions, rewards, dones, next_states = unpack_batch(batch)
+
+    states_v = torch.tensor(states).to(device)
+
+    qvalues = net.qvals(states_v).cpu().data.numpy()
+    qvalues = qvalues[np.arange(qvalues.shape[0]), actions]
+
+    qvalues = np.reshape(qvalues, -1)
+    return np.mean(qvalues)
 
 class RewardTracker:
     def __init__(self, writer, stop_reward):

@@ -55,10 +55,11 @@ if __name__ == "__main__":
 
         tensor = torch.tensor(np.expand_dims(np.asarray(obs), axis=0)).to(device)
         q_values = net.qvals(tensor).cpu().data.numpy()[0]
-        print(q_values)
+        #print(q_values)
 
         action = np.argmax(q_values)
         obs, reward, done, info = env.step(action)
+        print(reward)
 
         time.sleep(1/30)
 

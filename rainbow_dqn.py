@@ -106,6 +106,11 @@ if __name__ == "__main__":
 
             optimizer.zero_grad()
             batch, batch_indices, batch_weights = buffer.sample(params['batch_size'], beta)
+
+            if frame_idx % params['qvalues_estimation_interval'] == 0:
+                avg_qvalues = calc_avg_qval(batch, net, device=device)
+                writer.add_scalar("Batch qvalues", avg_qvalues, frame_idx)
+
             loss_v, sample_prios_v = calc_loss(batch, batch_weights, net, tgt_net.target_model,
                                                params['gamma'] ** REWARD_STEPS, device=device)
             loss_v.backward()
