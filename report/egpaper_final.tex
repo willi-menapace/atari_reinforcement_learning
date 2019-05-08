@@ -1,0 +1,127 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\usepackage{cvpr}
+\usepackage{times}
+\usepackage{epsfig}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% Include other packages here, before hyperref.
+
+% If you comment hyperref and then uncomment it, you should delete
+% egpaper.aux before re-running latex.  (Or just hit 'q' on the first latex
+% run, let it finish, and you should be clear).
+\usepackage[breaklinks=true,bookmarks=false]{hyperref}
+
+\cvprfinalcopy % *** Uncomment this line for the final submission
+
+%\def\cvprPaperID{****} % *** Enter the CVPR Paper ID here
+%\def\httilde{\mbox{\tt\raisebox{-.5ex}{\symbol{126}}}}
+
+% Pages are numbered in submission mode, and unnumbered in camera-ready
+%\ifcvprfinal\pagestyle{empty}\fi
+\setcounter{page}{1}
+\begin{document}
+
+\title{Adapting Rainbow DQN to Atari games}
+
+\author{Willi Menapace\\
+Ms-Pacman\\
+{\tt\small willi.menapace@studenti.unitn.it}
+% For a paper whose authors are all at the same institution,
+% omit the following lines up until the closing ``}''.
+% Additional authors and addresses can be added with ``\and'',
+% just like the second author.
+% To save space, use either the email address or home page, not both
+\and
+Second Author\\
+Institution2\\
+First line of institution2 address\\
+{\tt\small secondauthor@i2.org}
+}
+
+\maketitle
+%\thispagestyle{empty}
+
+%%%%%%%%% ABSTRACT
+
+
+%%%%%%%%% BODY TEXT
+\section{Introduction}
+
+Reinforcement Learning is one of the most active research area in the deep learning community. Its main challenge is finding a way to optimize a target function, usually the cumulative sum of rewards obtained through the policy, without explicit supervision. This technology finds a variety of possible applications that include continuous control systems such as autonomous cars or robotic arms, stock trading agents or videogame agents. However, despite its relevancy it is only recently that major improvements have come from the research community allowing the achievement of significant results.
+In particular, the attention of our group was caught by the victory of novel RL systems in exceptionally challenging games such as Starcraft 2 (DeepMind, December 2018) and Dota 2 (OpenAI, April 2019) against professional players. In order to take a glimpse into the the world of reinforcement learning and try to give a little contribution to the field, we revisit the DQN architecture introduced by DeepMind in \cite{DBLP:journals/corr/MnihKSGAWR13}, and improved upon in \cite{DBLP:journals/corr/abs-1710-02298}. The objective is to train and tune agents able to play at human skill level or better a set of chosen Atari games using only raw pixel input, namely Ms-Pacman, Atlantis and Demon Attack. The task is expected to be particularly challenging for the Ms-Pacman game as shown in \cite{humancontrol} where the plain DQN approach is able to achieve only a reported 13\% performance compared to a human player.
+Another challenging element is computing time. RL training phases are computationally expensive and reference results taken from \cite{DBLP:journals/corr/abs-1710-02298} are given after 200 million training iterations. From our benchmarks and codebase, a system equipped with a RTX 2070 GPU can process ~70 frames per second, giving a projected time of 33 GPU days for training in order to emulate the results. This is a prohibitive time amount, so we need to take steps to increase convergence speed on each particular game.
+
+%-------------------------------------------------------------------------
+
+\subsection{Proposed Method}
+
+We start with a tensorflow based hand implementation of a DQN as described in \cite{DBLP:journals/corr/MnihKSGAWR13} and test it on Ms-Pacman. As shown in \cite{humancontrol}, Ms-Pacman is a challenging environment for reinforcement learning algorithms due to its complexity. It requires the agent to be able to navigate in a maze to chase remaining dots to eat while avoiding being eaten by ghosts. An added complexity is given by the fact that after eating a special `pill' the ghosts become eatable for a limited amount of time and the agent needs to identify this timeframes and proactively chase ghosts in order to take them out.
+
+Unsurprisingly, this simple architecture is not satisfying, so we decide to implement the optimizations proposed in \cite{DBLP:journals/corr/abs-1710-02298} and generally referred to as Rainbow DQN. Due to the complexity of the first implementation and the need to migrate our codebase to the pytorch environment, we decide to base our implementation on top of the ptan agent library XXXXXXXXXXx, taking XXXXXXXXXXXXXXXXX as the initial codebase.
+
+We start by implementing and integrating together the N-Step, Double DQN and Noisy Layers optimizations, noticing improvements in the trained agent. In particular the $\epsilon$-greedy exploration strategy proposed in \cite{DBLP:journals/corr/MnihKSGAWR13} is particularly unsuited for Ms-Pacman. This exploration strategy causes a random action to happen with probability $1 - \epsilon$ and is necessary to avoid the agent from getting stuck in loops of actions while playing, but also causes death every time the agent is chased by a ghost, with the agent escaping successfully until the moment when a random action causes the agent to run into the ghost and be eaten.
+Noisy layers, on the other hand, work by perturbing the estimation of qvalues. When the agent is stuck in a loop of actions determined by similar qvalues the agent is still able to escape it thanks to the perturbations introduced by noisy layers, but when it is chased by a ghost and qvalues are far away from each other, the qvalue perturbations introduced by noise do not affect the choice of the agent to escape from the ghost.
+Encouraged by the results we decide to continue integrating the remaining rainbow improvements into our DQN architecture, but the likelyhood to introduce subtle bugs in our implementation due to the complexity of the task lead us to use the rainbow agent implementation provided by our library for the rest of the experiments.
+
+At this point each group member proceeds to tune the model to its environment.
+
+\subsubsection{Ms-Pacman}
+The agent trained on the rainbow model still shows unsatisfying behaviors after 70 hours of training. The agent learns to successfully eat dots across the maze and to eat the special pills that allow it to eat ghosts, but when the special pills terminate and few dots remain in the maze the agent seems unable to detect the presence of attacking ghosts and runs into them.
+An analysis of qvalues output by the network show the reason for the behavior. The reward system used for training clips rewards in the range (-1, 1), but never assigns a negative reward to the agent upon death. In an environment such as OpenAI Cartpole, where the agent continuously receives rewards, this is not a problem because death prevents the agent to accumulate future rewards, so qvalues diminish for actions that will lead to death. In our situation however, when there are no dots and special pills in close proximity, the correct qvalue to estimate is 0. When a ghost approaches the correct qvalue to estimate is still 0 due to the absence of death penalties, so the agent may well decide to run into the ghost. Moreover, in the original game, there is a difference in color from ghosts that are eatable and ghosts that are not, but due to grayscale conversion we notice that there is only a subtle difference between eatable and not eatable ghosts which may further damage training.
+In order to address this problems we preprocess each frame in order to make eatable ghosts of a distinguishable gray tonality and we use a common technique in RL called reward reshaping, which consists in changing the rewards in order to drive the policy towards the given direction.
+Care has been taken in order not for expected qvalues to saturate the boundaries imposed to qvalues by the Distributional DQN modification. For the subsequent attempt the reward policy war reshaped in this way:
+\begin{itemize}
+	\item Eating dot $1 \rightarrow 0.5$
+	\item Eating pill $1 \rightarrow 1$
+	\item Eating ghost $1 \rightarrow 2$
+	\item Eating fruit $1 \rightarrow 0.5$
+	\item Being eaten $0 \rightarrow -7$
+	\item Finishing level $1 \rightarrow 7$
+\end{itemize}
+
+The results obtained with these settings however were not satisfying. An analysis of the behavior of the agent in fact highlighted that, due to the high death penalization, the agent was so hindered to get close to a ghost that it always tried to hide away from them, apparently ignoring nearby dots to eat and not making progress. Moreover, due to the relatively high special pill and ghost eating rewards, the agent tended to immediately eat all the available special pills, and be very aggressive with regards to eatable ghosts. While this strategy provided high game scores our main objective was to make progress through different levels, so rewards were reshaped again to encourage a more gentle behavior:
+\begin{itemize}
+	\item Eating dot $0.5 \rightarrow 0.5$
+	\item Eating pill $1 \rightarrow 0$
+	\item Eating ghost $2 \rightarrow 1.5$
+	\item Eating fruit $0.5 \rightarrow 0.5$
+	\item Being eaten $-7 \rightarrow -2$
+	\item Finishing level $7 \rightarrow 4$
+\end{itemize}
+
+Notably, we didn't reward the agent for eating special pills in order not to encourage it to eat them in close succession, reduced the reward for eating ghosts and considerably reduced the penalty for being eaten.
+
+This settings proved successful. The agent proactively searches dots to eat in the maze, eats special pills at reasonable timeframes, hunts eatable ghosts and run away from dangerous ones.
+In order to aid convergence we also reduce the learning rate from $2e-5$ to $5e-6$ after 44 training hours and 11.3M training iterations and from $5e-6$ to $1.25e-6$ after 16.5M training iterations and 74 hours of training.
+
+\subsection{Results}
+
+\subsubsection{Ms-Pacman}
+
+\ref{tab:pacman_results} shows average scores obtained by each agent we trained on Ms-Pacman.
+
+\begin{center}
+	\begin{tabular}{ |c|c|c|c| } 
+		\hline
+		 & Plain DQN & Rainbow DQN & Our Rainbow \\ 
+		 \hline
+		Mean score & 1880 & 2267 & 5145 \\
+		Std dev. & 448 & 504 & 866 \\
+		Samples & 50 & 50 & 50 \\
+		\hline
+	\end{tabular}
+	\label{tab:pacman_results}
+\end{center}
+
+Notably, the reward reshaping and frame preprocessing approach we used to train our final agent version allowed the network to obtain an average score of 5145 after XXXXXXxx training iteration. For comparison \cite{DBLP:journals/corr/abs-1710-02298} reports an average 5380.4 score on Ms-Pacman after 200M training iterations which we consider a success given our limited computational resources.
+Moreover, \cite{DBLP:journals/corr/WangFL15} and \cite{humancontrol} reports an average human score for Ms-Pacman of respectively 6951.6 and 15693, meaning we are are not still able to reach human level behavior, but the result is satisfying.
+
+{\small
+\bibliographystyle{ieee}
+\bibliography{egbib}
+}
+
+\end{document}

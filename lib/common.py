@@ -25,12 +25,12 @@ HYPERPARAMS = {
     'pacman': {
         'env_name': "MsPacmanNoFrameskip-v4",
         'env_wrapper_train': lib.wrapping.wrap_pacman,
-        'env_wrapper_test': lib.wrapping.wrap_pacman,
+        'env_wrapper_test': lib.wrapping.wrap_pacman_testing,
         'stop_reward': 10000.0,
         'run_name': 'pacman',
-        'resume_from': None,
-        'replay_size': 10 ** 6,
-        'replay_initial': 300000,
+        'resume_from': 'pacman_16500000.dat',
+        'replay_size': 1000000,
+        'replay_initial': 100000,
         'save_interval':    100000,
         'save_dir':         "pacman_saves/",
         'target_net_sync': 10000,
@@ -38,7 +38,7 @@ HYPERPARAMS = {
         'epsilon_frames': 10 ** 6,
         'epsilon_start': 1.0,
         'epsilon_final': 0.1,
-        'learning_rate': 0.00006,
+        'learning_rate': 0.00000125,
         'gamma': 0.99,
         'batch_size': 32
     }

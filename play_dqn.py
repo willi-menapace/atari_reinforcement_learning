@@ -23,7 +23,7 @@ dump_directory = "screenshots/"
 
 if __name__ == "__main__":
 
-    saves_filename = "pacman_9700000.dat"
+    saves_filename = "pacmanplain_9700000.dat"
     step_count = int(saves_filename.split("_")[1].split(".")[0])
 
     params = common.HYPERPARAMS['pacman']
@@ -41,29 +41,36 @@ if __name__ == "__main__":
     net = rainbow_model.RainbowDQN(env.observation_space.shape, env.action_space.n).to(device)
 
     frame_idx = 0
-
+    net.eval()
     #Loads saved net
     net.load_state_dict(torch.load(params["save_dir"] + saves_filename))
 
+    game_scores = []
+
+    current_game_score = 0
     obs = env.reset()
     done = False
     while True:
-        if np.random.randint(0, 5000000000, 1) == 0:
+        if np.random.randint(0, 100, 1) == 0:
             plt.imshow(np.asarray(obs)[0,:,:], cmap="gray")
             plt.savefig("{}{}_{}.png".format(dump_directory, params["run_name"], frame_idx))
             frame_idx += 1
 
         tensor = torch.tensor(np.expand_dims(np.asarray(obs), axis=0)).to(device)
         q_values = net.qvals(tensor).cpu().data.numpy()[0]
-        #print(q_values)
+        #print(np.max(q_values))
+        #print(sorted(q_values))
 
         action = np.argmax(q_values)
         obs, reward, done, info = env.step(action)
-        print(reward)
-
-        time.sleep(1/30)
+        current_game_score += reward
 
         if done:
+            game_scores.append(current_game_score)
+            current_game_score = 0
+            score_std = np.std(game_scores)
+            score_mean = np.mean(game_scores)
+            print("Games played, mean, std:\t{}\t{}\t{}".format(len(game_scores), score_mean, score_std))
             obs = env.reset()
 
-        env.render()
+        #env.render()

@@ -24,7 +24,7 @@ def calc_loss(batch, batch_weights, net, tgt_net, gamma, device="cpu"):
     states_v = torch.tensor(states).to(device)
     actions_v = torch.tensor(actions).to(device)
     next_states_v = torch.tensor(next_states).to(device)
-    batch_weights_v = torch.tensor(batch_weights).to(device)
+    #batch_weights_v = torch.tensor(batch_weights).to(device)
 
     # next state distribution
     # dueling arch -- actions from main net, distr from tgt_net
@@ -51,23 +51,9 @@ def calc_loss(batch, batch_weights, net, tgt_net, gamma, device="cpu"):
     proj_distr_v = torch.tensor(proj_distr).to(device)
 
     loss_v = -state_log_sm_v * proj_distr_v
-    loss_v = batch_weights_v * loss_v.sum(dim=1)
+    #loss_v = batch_weights_v * loss_v.sum(dim=1)
     return loss_v.mean(), loss_v + 1e-5
 
-
-def infer_buffer_weights(net, tgt_net, batches_count, buffer, params, beta, device):
-    print("Preparing buffer weights in {} passes".format(batches_count))
-
-    for i in range(batches_count):
-        if i % 1000 == 0:
-            print("batch {}".format(i))
-
-        batch, batch_indices, batch_weights = buffer.sample(params['batch_size'], beta)
-
-        loss_v, sample_prios_v = calc_loss(batch, batch_weights, net, tgt_net.target_model,
-                                           params['gamma'] ** REWARD_STEPS, device=device)
-
-        buffer.update_priorities(batch_indices, sample_prios_v.data.cpu().numpy())
 
 if __name__ == "__main__":
     params = common.HYPERPARAMS['pacman']
@@ -88,11 +74,11 @@ if __name__ == "__main__":
     agent = ptan.agent.DQNAgent(lambda x: net.qvals(x), ptan.actions.ArgmaxActionSelector(), device=device)
 
     exp_source = ptan.experience.ExperienceSourceFirstLast(env, agent, gamma=params['gamma'], steps_count=REWARD_STEPS)
-    buffer = ptan.experience.PrioritizedReplayBuffer(exp_source, params['replay_size'], PRIO_REPLAY_ALPHA)
+    #buffer = ptan.experience.PrioritizedReplayBuffer(exp_source, params['replay_size'], PRIO_REPLAY_ALPHA)
+    buffer = ptan.experience.ExperienceReplayBuffer(exp_source, buffer_size=params['replay_size'])
     optimizer = optim.Adam(net.parameters(), lr=params['learning_rate'])
 
     frame_idx = 0
-    first_train_iteration = True
     beta = BETA_START
 
     #If we are requested to continue training from an old checkpoint, load it
@@ -102,7 +88,12 @@ if __name__ == "__main__":
 
         print("Loading network and optimizer {}".format(saves_filename))
         net.load_state_dict(torch.load(params["save_dir"] + saves_filename))
+        #tgt_net.sync()
         optimizer.load_state_dict(torch.load(params["save_dir"] + saves_filename + ".optimizer"))
+
+        for param_group in optimizer.param_groups:
+            print("Learning rate correctly updated!")
+            param_group['lr'] = params['learning_rate']
 
     tgt_net = ptan.agent.TargetNet(net)
 
@@ -117,26 +108,25 @@ if __name__ == "__main__":
                 if reward_tracker.reward(new_rewards[0], frame_idx):
                     break
 
-            if len(buffer) < params['replay_initial']:
+            if len(buffer) <= params['replay_initial']:
                 continue
 
-            if first_train_iteration:
-                first_train_iteration = False
-                infer_buffer_weights(net, tgt_net, params['replay_initial'] // params['batch_size'] * 16, buffer, params, beta, device)
-
             optimizer.zero_grad()
-            batch, batch_indices, batch_weights = buffer.sample(params['batch_size'], beta)
+            #batch, batch_indices, batch_weights = buffer.sample(params['batch_size'], beta)
+            batch = buffer.sample(params['batch_size'])
 
             if frame_idx % params['qvalues_estimation_interval'] == 0:
                 avg_qvalues = calc_avg_qval(batch, net, device=device)
                 writer.add_scalar("Batch qvalues", avg_qvalues, frame_idx)
 
-            loss_v, sample_prios_v = calc_loss(batch, batch_weights, net, tgt_net.target_model,
+            #loss_v, sample_prios_v = calc_loss(batch, batch_weights, net, tgt_net.target_model,
+            #                                   params['gamma'] ** REWARD_STEPS, device=device)
+            loss_v, sample_prios_v = calc_loss(batch, 0, net, tgt_net.target_model,
                                                params['gamma'] ** REWARD_STEPS, device=device)
 
             loss_v.backward()
             optimizer.step()
-            buffer.update_priorities(batch_indices, sample_prios_v.data.cpu().numpy())
+            #buffer.update_priorities(batch_indices, sample_prios_v.data.cpu().numpy())
 
             if frame_idx % params['target_net_sync'] == 0:
                 tgt_net.sync()
