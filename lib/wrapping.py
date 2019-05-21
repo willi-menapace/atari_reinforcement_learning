@@ -1,3 +1,4 @@
+
 import ptan.common.wrappers as ptanwrap
 import gym
 import gym.spaces as spaces
@@ -134,6 +135,44 @@ class PacmanRewardManager(gym.Wrapper):
         obs = self.env.reset()
         return obs
 
+class AtlantisResizeAndRecolorFrame(gym.ObservationWrapper):
+    def __init__(self, env=None):
+        super(AtlantisResizeAndRecolorFrame, self).__init__(env)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(92, 84, 1), dtype=np.uint8)
+
+    def observation(self, obs):
+        return AtlantisResizeAndRecolorFrame.process(obs)
+
+    @staticmethod
+    def get_channel_mask(image, center_values, offset=10):
+        bool_mask = np.ones_like(image[:,:,0]).astype(np.bool)
+        for channel, value in enumerate(center_values):
+            bool_mask = bool_mask & ((image[:,:, channel] < (value + offset)) & (image[:,:, channel] > (value - offset)))
+
+        return bool_mask
+
+    @staticmethod
+    def get_atlantis_mask(image):
+        mask = AtlantisResizeAndRecolorFrame.get_channel_mask(image, (210, 164, 74))
+
+        return mask
+
+    #Transforms the image in 84 x 84 images aligned at the top of the screen
+    @staticmethod
+    def process(frame):
+        if frame.size == 210 * 160 * 3:
+            img = np.reshape(frame, [210, 160, 3]).astype(np.float32)
+        elif frame.size == 250 * 160 * 3:
+            img = np.reshape(frame, [250, 160, 3]).astype(np.float32)
+        else:
+            assert False, "Unknown resolution."
+        new_img = img[:, :, 0] * 0.299 + img[:, :, 1] * 0.587 + img[:, :, 2] * 0.114
+
+        resized_screen = cv2.resize(new_img, (84, 110), interpolation=cv2.INTER_AREA)
+        x_t = resized_screen[3:95, :]  # Aligns at top
+        x_t = np.reshape(x_t, [92, 84, 1])
+        return x_t.astype(np.uint8)
+
 def wrap_pacman(env, stack_frames=4, episodic_life=True, reward_reshaping=True, recolor_eatable_ghosts=True):
     """Apply a common set of wrappers for Atari games."""
     assert 'NoFrameskip' in env.spec.id
@@ -156,3 +195,19 @@ def wrap_pacman_testing(env):
 
 def wrap_pacman_testing_no_recolor(env):
     return wrap_pacman(env, episodic_life=False, reward_reshaping=False, recolor_eatable_ghosts=False)
+
+def wrap_atlantis(env, stack_frames=4, episodic_life=False, reward_reshaping=True):
+    """Apply a common set of wrappers for Atari games."""
+    assert 'NoFrameskip' in env.spec.id
+    if episodic_life:
+        env = ptanwrap.EpisodicLifeEnv(env)
+    env = ptanwrap.NoopResetEnv(env, noop_max=30)
+    env = ptanwrap.MaxAndSkipEnv(env, skip=4)
+    if 'FIRE' in env.unwrapped.get_action_meanings():
+        env = ptanwrap.FireResetEnv(env)
+    env = AtlantisResizeAndRecolorFrame(env)
+    env = ptanwrap.ImageToPyTorch(env)
+    env = ptanwrap.FrameStack(env, stack_frames)
+    if reward_reshaping:
+        env = ptanwrap.ClippedRewardsWrapper(env)
+    return env

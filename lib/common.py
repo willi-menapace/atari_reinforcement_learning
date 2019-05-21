@@ -41,6 +41,26 @@ HYPERPARAMS = {
         'learning_rate': 0.00000125,
         'gamma': 0.99,
         'batch_size': 32
+    },
+    'atlantis': {
+        'env_name': "AtlantisNoFrameskip-v4",
+        'env_wrapper_train': lib.wrapping.wrap_atlantis,
+        'env_wrapper_test': lib.wrapping.wrap_atlantis,
+        'stop_reward': 10000.0,
+        'run_name': 'atlantis',
+        'resume_from': 'atlantis_6688312.dat',
+        'replay_size': 9 * 10 ** 5,
+        'replay_initial': 300000,
+        'save_interval':    100000,
+        'save_dir':         "atlantis_saves/",
+        'target_net_sync': 10000,
+        'qvalues_estimation_interval': 5000,
+        'epsilon_frames': 10 ** 6,
+        'epsilon_start': 1.0,
+        'epsilon_final': 0.1,
+        'learning_rate': 0.00002,
+        'gamma': 0.99,
+        'batch_size': 32
     }
 }
 
