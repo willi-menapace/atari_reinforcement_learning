@@ -37,7 +37,7 @@ Ms-Pacman\\
 \and
 Luca Zanella\\
 Atlantis\\
-{\tt\small secondauthor@i2.org}
+{\tt\small luca.zanella-3@studenti.unitn.it}
 \and
 Daniele Giuliani\\
 Demon Attack\\
@@ -61,13 +61,13 @@ Another challenging element is computing time. RL training phases are computatio
 
 \subsection{Proposed Method}
 
-We start with a tensorflow based hand implementation of a DQN as described in \cite{DBLP:journals/corr/MnihKSGAWR13} and test it on Ms-Pacman. As shown in \cite{humancontrol}, Ms-Pacman is a challenging environment for reinforcement learning algorithms due to its complexity. It requires the agent to be able to navigate in a maze to chase remaining dots to eat while avoiding being eaten by ghosts. An added complexity is given by the fact that after eating a special `pill' the ghosts become eatable for a limited amount of time and the agent needs to identify this timeframes and proactively chase ghosts in order to take them out.
+We start with a tensorflow based hand implementation of a DQN as described in \cite{DBLP:journals/corr/MnihKSGAWR13} and test it on Ms-Pacman. As shown in \cite{humancontrol}, Ms-Pacman is a challenging environment for reinforcement learning algorithms due to its complexity. It requires the agent to be able to navigate in a maze to chase remaining dots to eat while avoiding being eaten by ghosts. An added complexity is given by the fact that after eating a special `pill' the ghosts become eatable for a limited amount of time and the agent needs to identify these timeframes and proactively chase ghosts in order to take them out.
 
 Unsurprisingly, this simple architecture is not satisfying, so we decide to implement the optimizations proposed in \cite{DBLP:journals/corr/abs-1710-02298} and generally referred to as Rainbow DQN. Due to the complexity of the first implementation and the need to migrate our codebase to the pytorch environment, we decide to base our implementation on top of the ptan agent library \cite{ptan}, taking \cite{packtrepo} as the initial codebase.
 
 We start by implementing and integrating together the N-Step, Double DQN and Noisy Layers optimizations, noticing improvements in the trained agent. In particular the $\epsilon$-greedy exploration strategy proposed in \cite{DBLP:journals/corr/MnihKSGAWR13} is particularly unsuited for Ms-Pacman. This exploration strategy causes a random action to happen with probability $1 - \epsilon$ and is necessary to avoid the agent from getting stuck in loops of actions while playing, but also causes death every time the agent is chased by a ghost, with the agent escaping successfully until the moment when a random action causes the agent to run into the ghost and be eaten.
 Noisy layers, on the other hand, work by perturbing the estimation of qvalues. When the agent is stuck in a loop of actions determined by similar qvalues the agent is still able to escape it thanks to the perturbations introduced by noisy layers, but when it is chased by a ghost and qvalues are far away from each other, the qvalue perturbations introduced by noise do not affect the choice of the agent to escape from the ghost.
-Encouraged by the results, we decide to continue integrating the remaining rainbow improvements into our DQN architecture, but the likelyhood to introduce subtle bugs in our implementation due to the complexity of the task lead us to use the rainbow agent implementation provided by our library as a base for the rest of the experiments.
+Encouraged by the results, we decide to continue integrating the remaining rainbow improvements into our DQN architecture, but the likelihood to introduce subtle bugs in our implementation due to the complexity of the task lead us to use the rainbow agent implementation provided by our library as a base for the rest of the experiments.
 
 At this point each group member proceeds to tune the model to its environment.
 
@@ -100,6 +100,16 @@ Notably, we didn't reward the agent for eating special pills in order not to enc
 This settings proved successful. The agent proactively searches dots to eat in the maze, eats special pills at reasonable timeframes, hunts eatable ghosts and run away from dangerous ones.
 In order to aid convergence we also reduce the learning rate from $2e-5$ to $5e-6$ after 44 training hours and 11.3M training iterations and from $5e-6$ to $1.25e-6$ after 16.5M training iterations and 74 hours of training.
 
+\subsubsection{Atlantis}
+\label{atlantis}
+The choice of Atlantis is based on (guided by?) the $449.9\%$ performance obtained by the plain DQN approach compared to a human player as shown in \cite{humancontrol}.
+ 
+The game consists of defending the city of Atlantis, made of three defense posts and six Atlantean installations, from the Gorgon vessels. The game ends when the Acropolis Command Post and all six of Atlantis' installations are destroyed. 
+
+In the original Rainbow DQN, observations are grey-scaled and rescaled to $84$ x $84$ pixels \cite{DBLP:journals/corr/abs-1710-02298}, however, it seems that this setting compresses the portion of the sky maintaining information, such as the score, that could be irrelevant to the agent. Based on that we decided to rescale observations  to $92$ x $84$ pixels maintaining only signicant parts of the frame.
+
+Gorgon vessels circle down from the highest level to the one closest to Atlantis and can only fire the deathray when close to the city. This attitude seems suitable to be learned by a network. Since the first hours of training, the agent learns to successfully destroy Gorgon vessels, reaching scores above the ones obtained by a professional human games tester as shown in \cite{humancontrol}.  One of the most notable aspects encountered during the training was the discovery of a bug in the system: one of the six Atlantean installations could not be demolished. This allows the agent to obtain the maximum possible score in the game. Although this strategy leads to the highest possible game score, the main objective was to make the agent strong enough to not rely on this shortcut and we decided to proceed with the training. This choice proved to be successful in improving the policy of the agent: the game score obtained is still the highest possible, but now the agent does not rely on the bug and concludes the game episode with all seven installations being untoched for most of the time. Another significant aspect is that the agent mainly uses the Acropolis Command Post and the right sentry post to defend all the Atlantis' installations. 
+
 \subsection{Results}
 
 \subsubsection{Ms-Pacman}
@@ -127,6 +137,9 @@ Table \ref{tab:pacman_results} shows average scores obtained by each agent we tr
 Notably, the reward reshaping and frame preprocessing approach we used to train our final agent version allowed the network to obtain an average score of 5145 after 22.9M training iteration. For comparison \cite{DBLP:journals/corr/abs-1710-02298} reports an average 5380.4 score on Ms-Pacman after 200M training iterations which we consider a success given our limited computational resources.
 The score corresponds to reaching on average the end of level 2 and sometimes reaching level 3. Interestingly, Ms-Pacman level 3 has a different color pattern and maze structure which may be the reason why the agent struggles to gather further reward. Modifying the Ms-Pacman emulator to start from level 3 instead of level 1 with a certain probability may allow the agent to gather more samples from this level and continue its improvements.
 Moreover, \cite{DBLP:journals/corr/WangFL15} and \cite{humancontrol} reports an average human score for Ms-Pacman of respectively 6951.6 and 15693, meaning we are are not still able to reach human level behavior, but the result is satisfying.
+
+\subsubsection{Atlantis}
+DeepMind reports an average score for Rainbow on Atlantis over 200 testing episodes of $826,659.5$ \cite{DBLP:journals/corr/abs-1710-02298}. The frame preprocessing approach we used to train our agent allowed the network to obtain an average score of $1,000,000$ after $6.6$M training iterations without exploiting the bug mentioned in \ref{atlantis}. Despite the left sentry post is not as precise as the others,  proceeding with the training of the network should solve this problem. 
 
 {\small
 \bibliographystyle{ieee}
