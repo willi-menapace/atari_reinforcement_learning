@@ -61,6 +61,26 @@ HYPERPARAMS = {
         'learning_rate': 0.00002,
         'gamma': 0.99,
         'batch_size': 32
+    },
+    'demon_attack': {
+        'env_name': "DemonAttackNoFrameskip-v4",
+        'env_wrapper_train': lib.wrapping.wrap_demon_attack,
+        'env_wrapper_test': lib.wrapping.wrap_demon_attack_test,
+        'stop_reward': 10000.0,
+        'run_name': 'demon_attack',
+        'resume_from': None,
+        'replay_size': 5 * 10 ** 5,
+        'replay_initial': 300000,
+        'save_interval':    100000,
+        'save_dir':         "demon_attack_saves/",
+        'target_net_sync': 10000,
+        'qvalues_estimation_interval': 5000,
+        'epsilon_frames': 10 ** 6,
+        'epsilon_start': 1.0,
+        'epsilon_final': 0.1,
+        'learning_rate': 0.00002,
+        'gamma': 0.99,
+        'batch_size': 32
     }
 }
 
