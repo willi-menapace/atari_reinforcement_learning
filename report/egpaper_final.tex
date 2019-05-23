@@ -41,7 +41,7 @@ Atlantis\\
 \and
 Daniele Giuliani\\
 Demon Attack\\
-{\tt\small secondauthor@i2.org}
+{\tt\small daniele.giuliani@studenti.unitn.it}
 }
 
 \maketitle
@@ -108,7 +108,17 @@ The game consists of defending the city of Atlantis, made of three defense posts
 
 In the original Rainbow DQN, observations are grey-scaled and rescaled to $84$ x $84$ pixels \cite{DBLP:journals/corr/abs-1710-02298}, however, it seems that this setting compresses the portion of the sky maintaining information, such as the score, that could be irrelevant to the agent. Based on that we decided to rescale observations  to $92$ x $84$ pixels maintaining only signicant parts of the frame.
 
-Gorgon vessels circle down from the highest level to the one closest to Atlantis and can only fire the deathray when close to the city. This attitude seems suitable to be learned by a network. Since the first hours of training, the agent learns to successfully destroy Gorgon vessels, reaching scores above the ones obtained by a professional human games tester as shown in \cite{humancontrol}.  One of the most notable aspects encountered during the training was the discovery of a bug in the system: one of the six Atlantean installations could not be demolished. This allows the agent to obtain the maximum possible score in the game. Although this strategy leads to the highest possible game score, the main objective was to make the agent strong enough to not rely on this shortcut and we decided to proceed with the training. This choice proved to be successful in improving the policy of the agent: the game score obtained is still the highest possible, but now the agent does not rely on the bug and concludes the game episode with all seven installations being untoched for most of the time. Another significant aspect is that the agent mainly uses the Acropolis Command Post and the right sentry post to defend all the Atlantis' installations. 
+Gorgon vessels circle down from the highest level to the one closest to Atlantis and can only fire the deathray when close to the city. This attitude seems suitable to be learned by a network. Since the first hours of training, the agent learns to successfully destroy Gorgon vessels, reaching scores above the ones obtained by a professional human games tester as shown in \cite{humancontrol}.  One of the most notable aspects encountered during the training was the discovery of a bug in the system: one of the six Atlantean installations could not be demolished. This allows the agent to obtain the maximum possible score in the game. Although this strategy leads to the highest possible game score, the main objective was to make the agent strong enough to not rely on this shortcut and we decided to proceed with the training. This choice proved to be successful in improving the policy of the agent: the game score obtained is still the highest possible, but now the agent does not rely on the bug and concludes the game episode with all seven installations being untoched for most of the time. Another significant aspect is that the agent mainly uses the Acropolis Command Post and the right sentry post to defend all the Atlantis' installations.
+
+\subsubsection{Demon Attack}
+\label{demon_attack}
+The third game to which we tried to apply the Rainbow DQN architecture is Demon Attack.
+
+The game mechanics are pretty simple. The player controls a space ship which can be moved horizontally across the playing field. The objective is to shoot down all the enemy spaceships, while avoiding their attacks. As the game progresses the enemies become stronger and stronger, they gain movement speed and use different attack patterns.
+
+Initially the training of the network for this game was done using Google Colab, this was due to the fact that some of our laptops were not powerful enough to sustain the training at a acceptable speed. Unfortunately Google Colab has strict limits on how long a program can run, this meant that we had to restart the training every few hours which slowed down the process quite a lot. Furthermore with this approach we could not make use of the prioritized buffer optimization because restarting the training of the network from a checkpoint, caused weird behavior in the training process so we had to resort to the normal replay buffer.
+
+As a second approach we retrained the whole network during the weekend using more a pore powerful machine available at home. This time we trained the network for approximately 72 hours consecutively on a machine with a GTX 960 GPU, although not as performing as the RTX 2070 and far from the performance of the Tesla T4 provided by Colab, it was still able to process 20 frames every second. With this approach we could also make use of the prioritized buffer which, as described in the result section, improved noticeably the performance of the network.
 
 \subsection{Results}
 
@@ -139,7 +149,17 @@ The score corresponds to reaching on average the end of level 2 and sometimes re
 Moreover, \cite{DBLP:journals/corr/WangFL15} and \cite{humancontrol} reports an average human score for Ms-Pacman of respectively 6951.6 and 15693, meaning we are are not still able to reach human level behavior, but the result is satisfying.
 
 \subsubsection{Atlantis}
-DeepMind reports an average score for Rainbow on Atlantis over 200 testing episodes of $826,659.5$ \cite{DBLP:journals/corr/abs-1710-02298}. The frame preprocessing approach we used to train our agent allowed the network to obtain an average score of $1,000,000$ after $6.6$M training iterations without exploiting the bug mentioned in \ref{atlantis}. Despite the left sentry post is not as precise as the others,  proceeding with the training of the network should solve this problem. 
+DeepMind reports an average score for Rainbow on Atlantis over 200 testing episodes of $826,659.5$ \cite{DBLP:journals/corr/abs-1710-02298}. The frame preprocessing approach we used to train our agent allowed the network to obtain an average score of $1,000,000$ after $6.6$M training iterations without exploiting the bug mentioned in \ref{atlantis}. Despite the left sentry post is not as precise as the others,  proceeding with the training of the network should solve this problem.
+
+\subsubsection{Demon Attack} 
+With the first approach we were able to obtain a mean score of $6500$ after approximately $30$ hours of training ($6.9$M frames processed). At this point the network performance was not improving quite as fast and consistently even with more training time. Our intuition was that the network had difficulty defeating the stronger enemies encountered later in the game, due to the fact that their attack pattern was different from all the one seen up to that point and the network didn't encounter this enemy frequently enough to be able to device a good strategy for defeating them.
+
+With the second approach instead after $72$ hours of training ($4.1$M frames processed) we were able to push the mean score up to $9500$ which is a considerable improvement over the previous attempt, taking into account also the fact that fewer frames were processed by the network.
+
+The scores obtained are quite lower than the one obtained by \cite{DBLP:journals/corr/abs-1710-02298}. In fact we noticed that the network had a problem learning one particular attack pattern used in the late game which is visually similar to the previous attack but works quite differently: while all other attack move only vertically, this attack is new in the sense that it can track the player and follow him horizontally, so for the agent it's quite more difficult to avoid.
+
+Because of the huge time requirement and hardware availability, we were not able to train the network any further. Nevertheless the result obtained are encouraging and training even more the network would probably allow the agent to learn the advanced attack patterns and obtain much higher scores.
+
 
 {\small
 \bibliographystyle{ieee}
