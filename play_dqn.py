@@ -18,7 +18,7 @@ dump_directory = "screenshots/"
 
 if __name__ == "__main__":
 
-    saves_filename = "pacman_22600000.dat"
+    saves_filename = "pacman_22900000.dat"
     step_count = int(saves_filename.split("_")[1].split(".")[0])
 
     params = common.HYPERPARAMS['pacman']
