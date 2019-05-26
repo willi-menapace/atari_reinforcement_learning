@@ -11,11 +11,6 @@ import torch.optim as optim
 
 from tensorboardX import SummaryWriter
 
-#todos
-#le rewards vanno in clipping a 10, calcolare un nuovo limite massimo
-#quando non ci sono robe da mangiare per lui andare in un fantasma o meno non cambia
-#bisogna dare reward negativa alla morte
-
 from lib import dqn_model, common, rainbow_model
 
 dump_images = True
@@ -23,7 +18,7 @@ dump_directory = "screenshots/"
 
 if __name__ == "__main__":
 
-    saves_filename = "pacmanplain_9700000.dat"
+    saves_filename = "pacman_22600000.dat"
     step_count = int(saves_filename.split("_")[1].split(".")[0])
 
     params = common.HYPERPARAMS['pacman']
@@ -41,15 +36,18 @@ if __name__ == "__main__":
     net = rainbow_model.RainbowDQN(env.observation_space.shape, env.action_space.n).to(device)
 
     frame_idx = 0
-    net.eval()
+
     #Loads saved net
     net.load_state_dict(torch.load(params["save_dir"] + saves_filename))
+    net.eval()
 
     game_scores = []
 
     current_game_score = 0
     obs = env.reset()
     done = False
+
+
     while True:
         if np.random.randint(0, 100, 1) == 0:
             plt.imshow(np.asarray(obs)[0,:,:], cmap="gray")
@@ -73,4 +71,5 @@ if __name__ == "__main__":
             print("Games played, mean, std:\t{}\t{}\t{}".format(len(game_scores), score_mean, score_std))
             obs = env.reset()
 
-        #env.render()
+        env.render()
+        #time.sleep(1/45)
