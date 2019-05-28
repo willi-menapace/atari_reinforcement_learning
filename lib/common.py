@@ -45,7 +45,7 @@ HYPERPARAMS = {
     'atlantis': {
         'env_name': "AtlantisNoFrameskip-v4",
         'env_wrapper_train': lib.wrapping.wrap_atlantis,
-        'env_wrapper_test': lib.wrapping.wrap_atlantis,
+        'env_wrapper_test': lib.wrapping.wrap_atlantis_test,
         'stop_reward': 10000.0,
         'run_name': 'atlantis',
         'resume_from': 'atlantis_6688312.dat',

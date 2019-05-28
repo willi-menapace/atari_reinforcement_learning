@@ -18,10 +18,10 @@ dump_directory = "screenshots/"
 
 if __name__ == "__main__":
 
-    saves_filename = "pacman_19000000.dat"
+    saves_filename = "atlantis_6688312.dat"
     step_count = int(saves_filename.split("_")[1].split(".")[0])
 
-    params = common.HYPERPARAMS['pacman']
+    params = common.HYPERPARAMS['atlantis']
     parser = argparse.ArgumentParser()
     parser.add_argument("--cuda", default=False, action="store_true", help="Enable cuda")
     args = parser.parse_args()
@@ -73,4 +73,4 @@ if __name__ == "__main__":
                 obs = env.reset()
 
             env.render()
-            time.sleep(1/120)
+            time.sleep(1/45)

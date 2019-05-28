@@ -212,6 +212,9 @@ def wrap_atlantis(env, stack_frames=4, episodic_life=False, reward_reshaping=Tru
         env = ptanwrap.ClippedRewardsWrapper(env)
     return env
 
+def wrap_atlantis_test(env, stack_frames=4, episodic_life=False):
+    return wrap_atlantis(env, stack_frames=4, episodic_life=False, reward_reshaping=False)
+
 def wrap_demon_attack(env, stack_frames=4, episodic_life=True):
   """Apply a common set of wrappers for Atari games."""
   assert 'NoFrameskip' in env.spec.id
