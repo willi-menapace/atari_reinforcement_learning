@@ -171,7 +171,27 @@ The score corresponds to reaching on average the end of level 2 and sometimes re
 Moreover, \cite{DBLP:journals/corr/WangFL15} and \cite{humancontrol} reports an average human score for Ms-Pacman of respectively 6951.6 and 15693, meaning we are are still not able to reach human level behavior, but the result is satisfying.
 
 \subsubsection{Atlantis}
-DeepMind reports an average score for Rainbow on Atlantis over 200 testing episodes of $826,659.5$ \cite{DBLP:journals/corr/abs-1710-02298}. The frame preprocessing approach we used to train our agent allowed the network to obtain an average score of $1,000,000$ after $6.6$M training iterations without exploiting the bug mentioned in \ref{atlantis} despite the left sentry post is not as precise as the others.  Proceeding with the training of the network should solve this problem.
+Table \ref{tab:atlantis_results} shows average scores obtained by the agent we trained on Atlantis. 
+
+\begin{table}
+	\begin{center}
+		\begin{tabular}{ |c|c|c|c| } 
+			\hline
+			& Our Rainbow \\ 
+			\hline
+			Mean score & 2,609,433.3 \\
+			Std dev. & 1,250,245.2 \\
+			Samples & 50 \\
+			Train frames & 6.6M \\
+			Train time & ~25h \\
+			\hline
+		\end{tabular}
+	\end{center}
+	\caption{Atlantis agent results.}
+	\label{tab:atlantis_results}
+\end{table}
+
+DeepMind reports an average score for Rainbow on Atlantis over 200 testing episodes of $826,659.5$ \cite{DBLP:journals/corr/abs-1710-02298}. The frame preprocessing approach we used to train our agent allowed the network to obtain an average score of $2,609,433.3$ after $6.6$M training iterations without exploiting the bug mentioned in \ref{atlantis} despite the left sentry post is not as precise as the others.  Proceeding with the training of the network should solve this problem.
 
 \subsubsection{Demon Attack} 
 With the first approach we were able to obtain a mean score of $6500$ after approximately $30$ hours of training ($6.9$M frames processed). At this point, the network performance was not improving consistently even with more training time. Our intuition was that the network had difficulty defeating the stronger enemies encountered later in the game, due to the fact that their attack pattern was different from all the one seen up to that point and the network didn't encounter this enemy frequently enough to be able to devise a good strategy for defeating them.
