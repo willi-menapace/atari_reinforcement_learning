@@ -181,7 +181,7 @@ Table \ref{tab:atlantis_results} shows average scores obtained by the agent we t
 			\hline
 			Mean score & 2,609,433.3 \\
 			Std dev. & 1,250,245.2 \\
-			Samples & 50 \\
+			Samples & 42 \\
 			Train frames & 6.6M \\
 			Train time & ~25h \\
 			\hline
@@ -193,10 +193,30 @@ Table \ref{tab:atlantis_results} shows average scores obtained by the agent we t
 
 DeepMind reports an average score for Rainbow on Atlantis over 200 testing episodes of $826,659.5$ \cite{DBLP:journals/corr/abs-1710-02298}. The frame preprocessing approach we used to train our agent allowed the network to obtain an average score of $2,609,433.3$ after $6.6$M training iterations without exploiting the bug mentioned in \ref{atlantis} despite the left sentry post is not as precise as the others.  Proceeding with the training of the network should solve this problem.
 
-\subsubsection{Demon Attack} 
-With the first approach we were able to obtain a mean score of $6500$ after approximately $30$ hours of training ($6.9$M frames processed). At this point, the network performance was not improving consistently even with more training time. Our intuition was that the network had difficulty defeating the stronger enemies encountered later in the game, due to the fact that their attack pattern was different from all the one seen up to that point and the network didn't encounter this enemy frequently enough to be able to devise a good strategy for defeating them.
+\subsubsection{Demon Attack}
 
-With the second approach instead after $72$ hours of training ($4.1$M frames processed) we were able to push the mean score up to $9500$ which is a considerable improvement over the previous attempt, taking into account also the fact that fewer frames were processed by the network.
+\begin{table}
+	\begin{center}
+		\begin{tabular}{ |c|c|c|c| } 
+			\hline
+			& Rainbow & Rainbow + Prio \\ 
+			\hline
+			Mean score & 6828 & 10291\\
+			Std dev. & 1812 & 4165\\
+			Samples & 100 & 100\\
+			Train frames & 6.9M & 4.1M\\
+			Train time & 29h (on Tesla T4) & 72h (on GTX 960)\\
+			\hline
+		\end{tabular}
+	\end{center}
+	\caption{Demon Attack agents results.}
+	\label{tab:da_result}
+\end{table}
+All of the results are summarize in the Table \ref{tab:da_result}.
+
+With the first approach we were able to obtain a decent score after approximately $29$ hours of training on Google Colab. At this point, the network performance was not improving consistently even with more training time. Our intuition was that the network had difficulty defeating the stronger enemies encountered later in the game, due to the fact that their attack pattern was different from all the one seen up to that point and the network didn't encounter this enemy frequently enough to be able to devise a good strategy for defeating them.
+
+With the second approach instead after $72$ hours of training (and only $4.1$M frames processed given the outdated hardware) we were able to improve the mean score by a considerable amount over the previous attempt, this is a great result if we take into account the fact that fewer frames were processed by the network.
 
 The scores obtained are lower than the one obtained by \cite{DBLP:journals/corr/abs-1710-02298}. In fact, we noticed that the network had a problem learning one particular attack pattern used in the late game which is visually similar to the previous attack but works differently: while all other attacks move only vertically, this attack can track the player and follow him horizontally, so for the agent it's more difficult to avoid.
 
