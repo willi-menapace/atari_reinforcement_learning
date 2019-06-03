@@ -140,7 +140,7 @@ The third game to which we try to apply the Rainbow DQN architecture is Demon At
 
 Initially, the training of the network for this game was done using Google Colab due to the fact that some of our laptops were not powerful enough to sustain the training at an acceptable speed. Unfortunately, Google Colab has strict limits on how long a program can run. This meant that we had to restart the training every few hours slowing down the process. Furthermore, we noticed that checkpoint restarts cause problems with the implementation of the prioritized replay buffer used by our library, probably due to a sub-optimal initialization of buffer weights. Although it would be possible to save the state of the buffer as a part of the checkpoint, we decided to resort to the plain replay buffer to avoid saving a component of the size of tens of gigabytes.
 
-As a second approach, we retrained the whole network during the weekend using more a pore powerful local machine. This time, we trained the network for approximately 72 hours consecutively on a machine with a GTX 960 GPU which, although not as performing as the RTX 2070 and far from the performance of the Tesla T4 provided by Colab, was still able to process 20 frames per second. With this approach, we could also make use of the prioritized buffer which, as described in the result section, improved noticeably the performance of the network.
+As a second approach, we retrained the whole network during the weekend using a more powerful local machine. This time, we trained the network for approximately 72 hours consecutively on a machine with a GTX 960 GPU which, although not as performing as the RTX 2070 and far from the performance of the Tesla T4 provided by Colab, was still able to process 20 frames per second. With this approach, we could also make use of the prioritized buffer which, as described in the result section, improved noticeably the performance of the network.
 
 \subsection{Results}
 
@@ -168,7 +168,7 @@ Table \ref{tab:pacman_results} shows average scores obtained by each agent we tr
 
 Notably, the reward reshaping and frame preprocessing approach we used to train our final agent version allowed the network to obtain an average score of 5145 after 22.9M training iteration. For comparison \cite{DBLP:journals/corr/abs-1710-02298} reports an average 5380.4 score on Ms-Pacman after 200M training iterations which we consider a success given our limited computational resources.
 The score corresponds to reaching on average the end of level 2 and sometimes reaching level 3. Interestingly, Ms-Pacman level 3 has a different color pattern and maze structure which may be the reason why the agent struggles to gather further reward. Modifying the Ms-Pacman emulator to start from level 3 instead of level 1 with a certain probability may allow the agent to gather more samples from this level and continue its improvements.
-Moreover, \cite{DBLP:journals/corr/WangFL15} and \cite{humancontrol} reports an average human score for Ms-Pacman of respectively 6951.6 and 15693, meaning we are are still not able to reach human level behavior, but the result is satisfying.
+Moreover, \cite{DBLP:journals/corr/WangFL15} and \cite{humancontrol} reports an average human score for Ms-Pacman of respectively 6951.6 and 15693, meaning we are still not able to reach human level behavior, but the result is satisfying.
 
 \subsubsection{Atlantis}
 Table \ref{tab:atlantis_results} shows average scores obtained by the agent we trained on Atlantis. 
@@ -212,13 +212,13 @@ DeepMind reports an average score for Rainbow on Atlantis over 200 testing episo
 	\caption{Demon Attack agents results.}
 	\label{tab:da_result}
 \end{table}
-All of the results are summarize in the Table \ref{tab:da_result}.
+All of the results are summarized in the Table \ref{tab:da_result}.
 
-With the first approach we were able to obtain a decent score after approximately $29$ hours of training on Google Colab. At this point, the network performance was not improving consistently even with more training time. Our intuition was that the network had difficulty defeating the stronger enemies encountered later in the game, due to the fact that their attack pattern was different from all the one seen up to that point and the network didn't encounter this enemy frequently enough to be able to devise a good strategy for defeating them.
+With the first approach we were able to obtain a decent score after approximately $29$ hours of training on Google Colab. At this point, the network performance was not improving consistently even with more training time. Our intuition was that the network had difficulty defeating the stronger enemies encountered later in the game, due to the fact that their attack pattern was different from all the one seen up to that point and the network did not encounter this enemy frequently enough to be able to devise a good strategy for defeating them.
 
 With the second approach instead after $72$ hours of training (and only $4.1$M frames processed given the outdated hardware) we were able to improve the mean score by a considerable amount over the previous attempt, this is a great result if we take into account the fact that fewer frames were processed by the network.
 
-The scores obtained are lower than the one obtained by \cite{DBLP:journals/corr/abs-1710-02298}. In fact, we noticed that the network had a problem learning one particular attack pattern used in the late game which is visually similar to the previous attack but works differently: while all other attacks move only vertically, this attack can track the player and follow him horizontally, so for the agent it's more difficult to avoid.
+The scores obtained are lower than the one obtained by \cite{DBLP:journals/corr/abs-1710-02298}. In fact, we noticed that the network had a problem learning one particular attack pattern used in the late game which is visually similar to the previous attack but works differently: while all other attacks move only vertically, this attack can track the player and follow him horizontally, so for the agent it is more difficult to avoid.
 
 Because of the huge time requirement and hardware availability, we were not able to train the network any further. Nevertheless, the results obtained are encouraging and training even more the network would probably allow the agent to learn the advanced attack patterns and obtain much higher scores.
 
